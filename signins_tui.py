@@ -85,6 +85,7 @@ class SignInAnalysisApp(App):
     total_rows: int = reactive(0)
     selected_column: str = reactive("")
     global_filter: dict[str, set] = reactive({})
+    filtered_data: dict[str, dict[str, int]] = reactive(defaultdict(lambda: defaultdict(int)))
 
     def compose(self) -> ComposeResult:
         """Compose the application layout."""
@@ -109,6 +110,7 @@ class SignInAnalysisApp(App):
         """Load the data and populate the tree."""
         self.log_message("Application mounted. Loading data...")
         self.load_data()
+        self.filtered_data = self.data.copy()
         self.populate_tree()
         self.query_one("#column_tree").root.expand()  # Expand the root node
 
@@ -117,13 +119,13 @@ class SignInAnalysisApp(App):
         """Handle apply filter button press."""
         self.apply_filter()
 
-    @on(Button.Pressed, "#clear_filters")
     def on_clear_filters(self) -> None:
         """Handle clear filters button press."""
         self.global_filter.clear()
         self.query_one("#filter_input").value = ""
         self.update_global_filter_info()
         self.update_details()
+        self.log_message("Cleared all filters.")
 
     @on(Input.Submitted, "#filter_input")
     def on_filter_submitted(self) -> None:
@@ -147,21 +149,34 @@ class SignInAnalysisApp(App):
         self.update_details()
         self.log_message(f"Applied filter to {self.selected_column}: '{filter_text}'")
 
-    def apply_global_filter(self) -> dict[str, int]:
-        """Apply global filter to the current column data."""
-        filtered_data = self.data[self.selected_column].copy()
+    def apply_global_filter(self, column: str) -> dict[str, int]:
+        """Apply global filter to the given column data."""
+        if not self.global_filter:
+            return self.data[column]
 
-        for column, values in self.global_filter.items():
-            filtered_data = {
-                value: count
-                for value, count in filtered_data.items()
-                if not values
-                or any(
-                    self.data[column][row_value] > 0
-                    for row_value in self.data[self.selected_column]
-                    if value == row_value and row_value in values
-                )
-            }
+        filtered_data = {}
+        for value, count in self.data[column].items():
+            include_value = True
+            for filter_column, filter_values in self.global_filter.items():
+                if filter_column == column:
+                    if value not in filter_values:
+                        include_value = False
+                        break
+                else:
+                    # Check if there's any overlap between the current value's data in other columns
+                    # and the filter values for those columns
+                    overlap = any(
+                        self.data[filter_column][other_value] > 0
+                        for other_value in filter_values
+                        if self.data[column][value] > 0
+                        and self.data[filter_column][other_value] > 0
+                    )
+                    if not overlap:
+                        include_value = False
+                        break
+
+            if include_value:
+                filtered_data[value] = count
 
         return filtered_data
 
@@ -177,6 +192,8 @@ class SignInAnalysisApp(App):
         """Handle button presses."""
         if event.button.id == "apply_filter":
             self.apply_filter()
+        elif event.button.id == "clear_filters":
+            self.on_clear_filters()
 
     def load_data(self) -> None:
         """Load the data from the CSV file."""
@@ -199,7 +216,7 @@ class SignInAnalysisApp(App):
         self.update_details()
 
     def update_details(self) -> None:
-        """Update the details table with the selected column data, respecting global filter."""
+        """Update the details table with the selected column data."""
         header = self.query_one("#details_header", Static)
         table = self.query_one("#details_table", DataTable)
 
@@ -207,12 +224,10 @@ class SignInAnalysisApp(App):
 
         table.clear(columns=True)
 
-        if self.selected_column in self.data:
-            # Apply global filter
-            filtered_data = self.apply_global_filter()
+        filtered_data = self.apply_global_filter(self.selected_column)
+        sorted_data = sorted(filtered_data.items(), key=lambda x: x[1], reverse=True)
 
-            sorted_data = sorted(filtered_data.items(), key=lambda x: x[1], reverse=True)
-
+        if sorted_data:
             # Calculate max widths
             max_value_width = max((len(str(value)) for value, _ in sorted_data), default=10)
             max_count_width = max((len(str(count)) for _, count in sorted_data), default=5)
