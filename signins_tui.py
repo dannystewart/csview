@@ -276,6 +276,11 @@ class SignInAnalysisApp(App):
             max_count_width = max(max_count_width, len(str(count)))
             max_percentage_width = max(max_percentage_width, len(percentage_str))
 
+        # Set default sorting if not specified
+        if not self.sort_column:
+            self.sort_column = "count"
+            self.sort_reverse = True
+
         # Log sorting information
         self.log_message(f"Sorting by: {self.sort_column}, Reverse: {self.sort_reverse}")
 
@@ -286,8 +291,6 @@ class SignInAnalysisApp(App):
             table_data.sort(key=lambda x: x[1], reverse=self.sort_reverse)
         elif self.sort_column == "percentage":
             table_data.sort(key=lambda x: float(x[2][:-1]), reverse=self.sort_reverse)
-        else:  # Default sort by count in descending order
-            table_data.sort(key=lambda x: x[1], reverse=True)
 
         # Log first few items after sorting
         self.log_message(f"First few items after sorting: {table_data[:5]}")
