@@ -11,10 +11,11 @@ import sys
 from collections import defaultdict
 
 from rich import traceback
+from textual import on
 from textual.app import App, ComposeResult
-from textual.containers import Container
+from textual.containers import Container, Horizontal
 from textual.reactive import reactive
-from textual.widgets import DataTable, Footer, Header, RichLog, Static, Tree
+from textual.widgets import Button, DataTable, Footer, Header, Input, RichLog, Static, Tree
 
 from dsutil.text import print_colored
 
@@ -59,6 +60,11 @@ class SignInAnalysisApp(App):
         height: auto;
         padding: 1 2;
     }
+
+    #filter_container {
+        height: auto;
+        padding: 1 2;
+    }
     """
 
     data: dict[str, dict[str, int]] = reactive(defaultdict(lambda: defaultdict(int)))
@@ -71,6 +77,11 @@ class SignInAnalysisApp(App):
         yield Tree("Columns", id="column_tree")
         yield Container(
             Static("Select a column to view details", id="details_header"),
+            Horizontal(
+                Input(placeholder="Filter values...", id="filter_input"),
+                Button("Apply Filter", id="apply_filter"),
+                id="filter_container",
+            ),
             DataTable(id="details_table"),
             id="main_container",
         )
@@ -82,6 +93,36 @@ class SignInAnalysisApp(App):
         self.log_message("Application mounted. Loading data...")
         self.load_data()
         self.populate_tree()
+        self.query_one("#column_tree").root.expand()  # Expand the root node
+
+    @on(Button.Pressed, "#apply_filter")
+    def on_apply_filter(self) -> None:
+        """Handle apply filter button press."""
+        self.apply_filter()
+
+    @on(Input.Submitted, "#filter_input")
+    def on_filter_submitted(self) -> None:
+        """Handle filter input submission (Enter key)."""
+        self.apply_filter()
+
+    def apply_filter(self) -> None:
+        """Apply the filter to the current column data."""
+        filter_text = self.query_one("#filter_input").value.lower()
+        self.update_details(filter_text)
+        self.log_message(f"Applied filter: '{filter_text}'")
+
+    def populate_tree(self) -> None:
+        """Populate the tree with the columns."""
+        tree = self.query_one("#column_tree", Tree)
+        for column in self.data:
+            tree.root.add(str(column))
+        tree.root.expand()  # Expand the root node to show all columns
+        self.log_message(f"Populated tree with {len(self.data)} columns")
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle button presses."""
+        if event.button.id == "apply_filter":
+            self.apply_filter()
 
     def load_data(self) -> None:
         """Load the data from the CSV file."""
@@ -96,20 +137,13 @@ class SignInAnalysisApp(App):
         self.log_message(f"Loaded {self.total_rows} rows of data")
         self.log_message(f"Columns found: {', '.join(self.data.keys())}")
 
-    def populate_tree(self) -> None:
-        """Populate the tree with the columns."""
-        tree = self.query_one("#column_tree", Tree)
-        for column in self.data:
-            tree.root.add(str(column))
-        self.log_message(f"Populated tree with {len(self.data)} columns")
-
     def on_tree_node_selected(self, event: Tree.NodeSelected) -> None:
         """Update the details when a tree node is selected."""
         self.selected_column = str(event.node.label)
         self.log_message(f"Selected column: {self.selected_column}")
         self.update_details()
 
-    def update_details(self) -> None:
+    def update_details(self, filter_text: str = "") -> None:
         """Update the details table with the selected column data."""
         header = self.query_one("#details_header", Static)
         table = self.query_one("#details_table", DataTable)
@@ -123,9 +157,17 @@ class SignInAnalysisApp(App):
                 self.data[self.selected_column].items(), key=lambda x: x[1], reverse=True
             )
 
+            # Apply filter
+            if filter_text:
+                sorted_data = [
+                    (value, count)
+                    for value, count in sorted_data
+                    if filter_text in str(value).lower()
+                ]
+
             # Calculate max widths
-            max_value_width = max(len(str(value)) for value, _ in sorted_data)
-            max_count_width = max(len(str(count)) for _, count in sorted_data)
+            max_value_width = max((len(str(value)) for value, _ in sorted_data), default=10)
+            max_count_width = max((len(str(count)) for _, count in sorted_data), default=5)
             max_percentage_width = len("100.00%")  # Fixed width for percentage column
 
             # Add columns with calculated widths
@@ -133,9 +175,12 @@ class SignInAnalysisApp(App):
             table.add_column("Count", width=max(max_count_width, len("Count")))
             table.add_column("Percentage", width=max(max_percentage_width, len("Percentage")))
 
+            total_filtered_count = sum(count for _, count in sorted_data)
+
             for value, count in sorted_data:
-                percentage = (count / self.total_rows) * 100
+                percentage = (count / total_filtered_count) * 100 if total_filtered_count > 0 else 0
                 table.add_row(str(value), str(count), f"{percentage:.2f}%")
+
             self.log_message(
                 f"Updated table with {len(sorted_data)} rows for {self.selected_column}"
             )
