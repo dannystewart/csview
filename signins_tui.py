@@ -87,6 +87,14 @@ class SignInAnalysisApp(App):
     global_filter: dict[str, set] = reactive({})
     filtered_data: dict[str, dict[str, int]] = reactive(defaultdict(lambda: defaultdict(int)))
 
+    def __init__(self):
+        super().__init__()
+        self.data = defaultdict(lambda: defaultdict(int))
+        self.filtered_rows = []
+        self.total_rows = 0
+        self.selected_column = ""
+        self.global_filter = {}
+
     def compose(self) -> ComposeResult:
         """Compose the application layout."""
         yield Header()
@@ -122,6 +130,7 @@ class SignInAnalysisApp(App):
     def on_clear_filters(self) -> None:
         """Handle clear filters button press."""
         self.global_filter.clear()
+        self.filtered_rows = list(self.filtered_rows)  # Reset to original data
         self.query_one("#filter_input").value = ""
         self.update_global_filter_info()
         self.update_details()
@@ -145,40 +154,22 @@ class SignInAnalysisApp(App):
         elif self.selected_column in self.global_filter:
             del self.global_filter[self.selected_column]
 
+        self.apply_global_filter()  # Apply the filter to the entire dataset
         self.update_global_filter_info()
         self.update_details()
         self.log_message(f"Applied filter to {self.selected_column}: '{filter_text}'")
 
-    def apply_global_filter(self, column: str) -> dict[str, int]:
-        """Apply global filter to the given column data."""
+    def apply_global_filter(self) -> None:
+        """Apply global filter to the entire dataset."""
         if not self.global_filter:
-            return self.data[column]
+            self.filtered_rows = list(self.filtered_rows)  # Reset to original data
+            return
 
-        filtered_data = {}
-        for value, count in self.data[column].items():
-            include_value = True
-            for filter_column, filter_values in self.global_filter.items():
-                if filter_column == column:
-                    if value not in filter_values:
-                        include_value = False
-                        break
-                else:
-                    # Check if there's any overlap between the current value's data in other columns
-                    # and the filter values for those columns
-                    overlap = any(
-                        self.data[filter_column][other_value] > 0
-                        for other_value in filter_values
-                        if self.data[column][value] > 0
-                        and self.data[filter_column][other_value] > 0
-                    )
-                    if not overlap:
-                        include_value = False
-                        break
-
-            if include_value:
-                filtered_data[value] = count
-
-        return filtered_data
+        self.filtered_rows = [
+            row
+            for row in self.filtered_rows
+            if all(row.get(col, "") in values for col, values in self.global_filter.items())
+        ]
 
     def populate_tree(self) -> None:
         """Populate the tree with the columns."""
@@ -201,7 +192,8 @@ class SignInAnalysisApp(App):
         self.log_message(f"Loading data from {log_file}")
         with open(log_file) as file:
             reader = csv.DictReader(file)
-            for row in reader:
+            self.filtered_rows = list(reader)  # Store all rows
+            for row in self.filtered_rows:
                 self.total_rows += 1
                 for col, value in row.items():
                     self.data[str(col)][str(value)] += 1
@@ -224,7 +216,12 @@ class SignInAnalysisApp(App):
 
         table.clear(columns=True)
 
-        filtered_data = self.apply_global_filter(self.selected_column)
+        # Count occurrences in filtered rows
+        filtered_data = defaultdict(int)
+        for row in self.filtered_rows:
+            value = row.get(self.selected_column, "")
+            filtered_data[value] += 1
+
         sorted_data = sorted(filtered_data.items(), key=lambda x: x[1], reverse=True)
 
         if sorted_data:
