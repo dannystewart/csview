@@ -43,57 +43,57 @@ class SignInAnalysisApp(App):
     """Analyze user sign-ins based on a CSV audit log export from Microsoft Entra."""
 
     CSS = """
-    #column_tree {
-        width: 25%;
-        height: 100%;
-        dock: left;
-    }
+        #column_tree {
+            width: 25%;
+            height: 100%;
+            dock: left;
+        }
 
-    #main_container {
-        width: 1fr;
-        height: 100%;
-    }
+        #main_container {
+            width: 1fr;
+            height: 100%;
+        }
 
-    DataTable {
-        height: 1fr;
-    }
+        DataTable {
+            height: 1fr;
+        }
 
-    #details_header {
-        height: auto;
-        padding: 1 2;
-    }
+        #details_header {
+            height: 5%;
+            padding: 1 2;
+        }
 
-    #filter_container {
-        height: auto;
-        padding: 1 2;
-    }
+        #filter_container {
+            height: auto;
+            padding: 1 2;
+        }
 
-    #global_filter_info {
-        height: auto;
-        padding: 1 2;
-        color: $accent;
-    }
+        #global_filter_info {
+            height: auto;
+            padding: 1 2;
+            color: $accent;
+        }
 
-    #filter_input {
-        width: 70%;
-    }
+        #filter_input {
+            width: 70%;
+        }
 
-    #apply_filter, #clear_filters {
-        width: 15%;
-    }
+        #apply_filter, #clear_filters {
+            width: 15%;
+        }
 
-    #log_container {
-        height: 15%;
-        dock: bottom;
-        border: solid $accent;
-        border-title-align: center;
-    }
+        #log_container {
+            height: 15%;
+            dock: bottom;
+            border: solid $accent;
+            border-title-align: center;
+        }
 
-    #log {
-        height: 100%;
-        border: none;
-        padding: 0 1;
-    }
+        #log {
+            height: 100%;
+            border: none;
+            padding: 0 1;
+        }
     """
 
     data: dict[str, dict[str, int]] = reactive(defaultdict(lambda: defaultdict(int)))
