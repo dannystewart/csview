@@ -9,6 +9,7 @@ import glob
 import os
 import sys
 from collections import defaultdict
+from datetime import datetime
 
 from rich import traceback
 from textual import on
@@ -16,6 +17,7 @@ from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal
 from textual.reactive import reactive
 from textual.widgets import Button, DataTable, Footer, Header, Input, RichLog, Static, Tree
+from zoneinfo import ZoneInfo
 
 from dsutil.text import print_colored
 
@@ -79,6 +81,19 @@ class SignInAnalysisApp(App):
     #apply_filter, #clear_filters {
         width: 15%;
     }
+
+    #log_container {
+        height: 15%;
+        dock: bottom;
+        border: solid $accent;
+        border-title-align: center;
+    }
+
+    #log {
+        height: 100%;
+        border: none;
+        padding: 0 1;
+    }
     """
 
     data: dict[str, dict[str, int]] = reactive(defaultdict(lambda: defaultdict(int)))
@@ -114,7 +129,7 @@ class SignInAnalysisApp(App):
             DataTable(id="details_table"),
             id="main_container",
         )
-        yield RichLog(id="log")
+        yield Container(RichLog(id="log"), id="log_container")
         yield Footer()
 
     def on_mount(self) -> None:
@@ -285,7 +300,8 @@ class SignInAnalysisApp(App):
     def log_message(self, message: str) -> None:
         """Log a message to the RichLog widget."""
         log_widget = self.query_one(RichLog)
-        log_widget.write(message)
+        timestamp = datetime.now(tz=ZoneInfo("America/New_York")).strftime("%I:%M:%S %p")
+        log_widget.write(f"[{timestamp}] {message}")
 
 
 if __name__ == "__main__":
