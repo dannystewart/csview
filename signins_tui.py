@@ -86,6 +86,8 @@ class SignInAnalysisApp(App):
     selected_column: str = reactive("")
     global_filter: dict[str, set] = reactive({})
     filtered_data: dict[str, dict[str, int]] = reactive(defaultdict(lambda: defaultdict(int)))
+    sort_column: reactive[str] = reactive("")
+    sort_reverse: reactive[bool] = reactive(False)
 
     def __init__(self):
         super().__init__()
@@ -119,9 +121,26 @@ class SignInAnalysisApp(App):
         """Load the data and populate the tree."""
         self.log_message("Application mounted. Loading data...")
         self.load_data()
-        self.filtered_data = self.data.copy()
         self.populate_tree()
-        self.query_one("#column_tree").root.expand()  # Expand the root node
+        self.query_one("#column_tree").root.expand()
+        self.setup_data_table()
+
+    def setup_data_table(self) -> None:
+        """Set up the DataTable with sortable headers."""
+        table = self.query_one(DataTable)
+        table.add_column("Value", key="value")
+        table.add_column("Count", key="count")
+        table.add_column("Percentage", key="percentage")
+        table.cursor_type = "row"
+
+    def on_data_table_header_selected(self, event: DataTable.HeaderSelected) -> None:
+        """Handle sorting when a column header is clicked."""
+        if self.sort_column == event.column_key:
+            self.sort_reverse = not self.sort_reverse
+        else:
+            self.sort_column = event.column_key
+            self.sort_reverse = False
+        self.update_details()
 
     @on(Button.Pressed, "#apply_filter")
     def on_apply_filter(self) -> None:
@@ -216,7 +235,7 @@ class SignInAnalysisApp(App):
 
         header.update(f"Details for: {self.selected_column}")
 
-        table.clear(columns=True)
+        table.clear()
 
         # Count occurrences in filtered rows
         filtered_data = defaultdict(int)
@@ -224,36 +243,33 @@ class SignInAnalysisApp(App):
             value = row.get(self.selected_column, "")
             filtered_data[value] += 1
 
-        sorted_data = sorted(filtered_data.items(), key=lambda x: x[1], reverse=True)
+        sorted_data = list(filtered_data.items())
+        total_filtered_count = sum(count for _, count in sorted_data)
 
-        if sorted_data:
-            # Calculate max widths
-            max_value_width = max((len(str(value)) for value, _ in sorted_data), default=10)
-            max_count_width = max((len(str(count)) for _, count in sorted_data), default=5)
-            max_percentage_width = len("100.00%")  # Fixed width for percentage column
+        # Prepare data for sorting
+        table_data = [
+            (str(value), count, f"{(count / total_filtered_count) * 100:.2f}%")
+            for value, count in sorted_data
+        ]
 
-            # Add columns with calculated widths
-            table.add_column("Value", width=max(max_value_width, len("Value")))
-            table.add_column("Count", width=max(max_count_width, len("Count")))
-            table.add_column("Percentage", width=max(max_percentage_width, len("Percentage")))
+        # Sort the data based on the selected column and direction
+        if self.sort_column == "value":
+            table_data.sort(key=lambda x: x[0], reverse=self.sort_reverse)
+        elif self.sort_column == "count":
+            table_data.sort(key=lambda x: x[1], reverse=self.sort_reverse)
+        elif self.sort_column == "percentage":
+            table_data.sort(key=lambda x: float(x[2][:-1]), reverse=self.sort_reverse)
 
-            total_filtered_count = sum(count for _, count in sorted_data)
+        # Add rows to the table
+        for row in table_data:
+            table.add_row(*row)
 
-            for value, count in sorted_data:
-                percentage = (count / total_filtered_count) * 100 if total_filtered_count > 0 else 0
-                table.add_row(str(value), str(count), f"{percentage:.2f}%")
-
-            self.log_message(
-                f"Updated table with {len(sorted_data)} rows for {self.selected_column}"
-            )
-        else:
-            table.add_column("Value", width=len("No data available"))
-            table.add_column("Count", width=len("Count"))
-            table.add_column("Percentage", width=len("Percentage"))
+        if not table_data:
             table.add_row("No data available", "", "")
-            self.log_message(f"No data available for {self.selected_column}")
 
         table.refresh(layout=True)
+
+        self.log_message(f"Updated table with {len(table_data)} rows for {self.selected_column}")
 
     def update_global_filter_info(self) -> None:
         """Update the global filter information display."""
