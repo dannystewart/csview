@@ -256,6 +256,8 @@ class SignInAnalysisApp(App):
         filtered_data = defaultdict(int)
         for row in self.filtered_rows:
             value = row.get(self.selected_column, "")
+            # Replace empty or None values with "(no value)"
+            value = "(no value)" if value in (None, "") else value
             filtered_data[value] += 1
 
         sorted_data = list(filtered_data.items())
