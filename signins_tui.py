@@ -65,21 +65,30 @@ class SignInAnalysisApp(App):
         height: auto;
         padding: 1 2;
     }
+
+    #global_filter_info {
+        height: auto;
+        padding: 1 2;
+        color: $accent;
+    }
     """
 
     data: dict[str, dict[str, int]] = reactive(defaultdict(lambda: defaultdict(int)))
     total_rows: int = reactive(0)
     selected_column: str = reactive("")
+    global_filter: dict[str, set] = reactive({})
 
     def compose(self) -> ComposeResult:
         """Compose the application layout."""
         yield Header()
         yield Tree("Columns", id="column_tree")
         yield Container(
+            Static("Global Filter: None", id="global_filter_info"),
             Static("Select a column to view details", id="details_header"),
             Horizontal(
                 Input(placeholder="Filter values...", id="filter_input"),
                 Button("Apply Filter", id="apply_filter"),
+                Button("Clear Filters", id="clear_filters"),
                 id="filter_container",
             ),
             DataTable(id="details_table"),
@@ -100,16 +109,49 @@ class SignInAnalysisApp(App):
         """Handle apply filter button press."""
         self.apply_filter()
 
+    @on(Button.Pressed, "#clear_filters")
+    def on_clear_filters(self) -> None:
+        """Handle clear filters button press."""
+        self.global_filter.clear()
+        self.query_one("#filter_input").value = ""
+        self.update_global_filter_info()
+        self.update_details()
+
     @on(Input.Submitted, "#filter_input")
     def on_filter_submitted(self) -> None:
         """Handle filter input submission (Enter key)."""
         self.apply_filter()
 
     def apply_filter(self) -> None:
-        """Apply the filter to the current column data."""
+        """Apply the filter to the current column data and update global filter."""
         filter_text = self.query_one("#filter_input").value.lower()
-        self.update_details(filter_text)
-        self.log_message(f"Applied filter: '{filter_text}'")
+        if filter_text:
+            filtered_values = {
+                value
+                for value in self.data[self.selected_column]
+                if filter_text in str(value).lower()
+            }
+            self.global_filter[self.selected_column] = filtered_values
+        elif self.selected_column in self.global_filter:
+            del self.global_filter[self.selected_column]
+
+        self.update_global_filter_info()
+        self.update_details()
+        self.log_message(f"Applied filter to {self.selected_column}: '{filter_text}'")
+
+    def apply_global_filter(self) -> dict[str, int]:
+        """Apply global filter to the current column data."""
+        filtered_data = self.data[self.selected_column].copy()
+
+        for column, values in self.global_filter.items():
+            if column != self.selected_column:
+                filtered_data = {
+                    value: count
+                    for value, count in filtered_data.items()
+                    if any(self.data[column][value] > 0 for value in values)
+                }
+
+        return filtered_data
 
     def populate_tree(self) -> None:
         """Populate the tree with the columns."""
@@ -140,11 +182,12 @@ class SignInAnalysisApp(App):
     def on_tree_node_selected(self, event: Tree.NodeSelected) -> None:
         """Update the details when a tree node is selected."""
         self.selected_column = str(event.node.label)
+        self.query_one("#filter_input").value = ""
         self.log_message(f"Selected column: {self.selected_column}")
         self.update_details()
 
-    def update_details(self, filter_text: str = "") -> None:
-        """Update the details table with the selected column data."""
+    def update_details(self) -> None:
+        """Update the details table with the selected column data, respecting global filter."""
         header = self.query_one("#details_header", Static)
         table = self.query_one("#details_table", DataTable)
 
@@ -153,17 +196,10 @@ class SignInAnalysisApp(App):
         table.clear(columns=True)
 
         if self.selected_column in self.data:
-            sorted_data = sorted(
-                self.data[self.selected_column].items(), key=lambda x: x[1], reverse=True
-            )
+            # Apply global filter
+            filtered_data = self.apply_global_filter()
 
-            # Apply filter
-            if filter_text:
-                sorted_data = [
-                    (value, count)
-                    for value, count in sorted_data
-                    if filter_text in str(value).lower()
-                ]
+            sorted_data = sorted(filtered_data.items(), key=lambda x: x[1], reverse=True)
 
             # Calculate max widths
             max_value_width = max((len(str(value)) for value, _ in sorted_data), default=10)
@@ -192,6 +228,17 @@ class SignInAnalysisApp(App):
             self.log_message(f"No data available for {self.selected_column}")
 
         table.refresh(layout=True)
+
+    def update_global_filter_info(self) -> None:
+        """Update the global filter information display."""
+        filter_info = "Global Filter: "
+        if self.global_filter:
+            filter_info += ", ".join(
+                f"{col} ({len(values)} values)" for col, values in self.global_filter.items()
+            )
+        else:
+            filter_info += "None"
+        self.query_one("#global_filter_info").update(filter_info)
 
     def log_message(self, message: str) -> None:
         """Log a message to the RichLog widget."""
