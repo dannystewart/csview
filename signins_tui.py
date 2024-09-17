@@ -90,6 +90,7 @@ class SignInAnalysisApp(App):
     def __init__(self):
         super().__init__()
         self.data = defaultdict(lambda: defaultdict(int))
+        self.all_rows = []  # Store all original rows
         self.filtered_rows = []
         self.total_rows = 0
         self.selected_column = ""
@@ -130,7 +131,7 @@ class SignInAnalysisApp(App):
     def on_clear_filters(self) -> None:
         """Handle clear filters button press."""
         self.global_filter.clear()
-        self.filtered_rows = list(self.filtered_rows)  # Reset to original data
+        self.filtered_rows = self.all_rows.copy()  # Reset to original data
         self.query_one("#filter_input").value = ""
         self.update_global_filter_info()
         self.update_details()
@@ -162,12 +163,12 @@ class SignInAnalysisApp(App):
     def apply_global_filter(self) -> None:
         """Apply global filter to the entire dataset."""
         if not self.global_filter:
-            self.filtered_rows = list(self.filtered_rows)  # Reset to original data
+            self.filtered_rows = self.all_rows.copy()  # Reset to original data
             return
 
         self.filtered_rows = [
             row
-            for row in self.filtered_rows
+            for row in self.all_rows
             if all(row.get(col, "") in values for col, values in self.global_filter.items())
         ]
 
@@ -192,8 +193,9 @@ class SignInAnalysisApp(App):
         self.log_message(f"Loading data from {log_file}")
         with open(log_file) as file:
             reader = csv.DictReader(file)
-            self.filtered_rows = list(reader)  # Store all rows
-            for row in self.filtered_rows:
+            self.all_rows = list(reader)  # Store all original rows
+            self.filtered_rows = self.all_rows.copy()  # Initialize filtered rows with all rows
+            for row in self.all_rows:
                 self.total_rows += 1
                 for col, value in row.items():
                     self.data[str(col)][str(value)] += 1
