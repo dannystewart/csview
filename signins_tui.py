@@ -71,6 +71,14 @@ class SignInAnalysisApp(App):
         padding: 1 2;
         color: $accent;
     }
+
+    #filter_input {
+        width: 70%;
+    }
+
+    #apply_filter, #clear_filters {
+        width: 15%;
+    }
     """
 
     data: dict[str, dict[str, int]] = reactive(defaultdict(lambda: defaultdict(int)))
@@ -144,12 +152,16 @@ class SignInAnalysisApp(App):
         filtered_data = self.data[self.selected_column].copy()
 
         for column, values in self.global_filter.items():
-            if column != self.selected_column:
-                filtered_data = {
-                    value: count
-                    for value, count in filtered_data.items()
-                    if any(self.data[column][value] > 0 for value in values)
-                }
+            filtered_data = {
+                value: count
+                for value, count in filtered_data.items()
+                if not values
+                or any(
+                    self.data[column][row_value] > 0
+                    for row_value in self.data[self.selected_column]
+                    if value == row_value and row_value in values
+                )
+            }
 
         return filtered_data
 
