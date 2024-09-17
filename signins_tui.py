@@ -101,17 +101,13 @@ class SignInAnalysisApp(App):
     selected_column: str = reactive("")
     global_filter: dict[str, set] = reactive({})
     filtered_data: dict[str, dict[str, int]] = reactive(defaultdict(lambda: defaultdict(int)))
-    sort_column: reactive[str] = reactive("")
-    sort_reverse: reactive[bool] = reactive(False)
+    sort_column: str = reactive("")
+    sort_reverse: bool = reactive(False)
 
     def __init__(self):
         super().__init__()
-        self.data = defaultdict(lambda: defaultdict(int))
         self.all_rows = []  # Store all original rows
         self.filtered_rows = []
-        self.total_rows = 0
-        self.selected_column = ""
-        self.global_filter = {}
 
     def compose(self) -> ComposeResult:
         """Compose the application layout."""
