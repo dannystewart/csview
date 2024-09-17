@@ -140,6 +140,21 @@ class SignInAnalysisApp(App):
         self.query_one("#column_tree").root.expand()
         self.setup_data_table()
 
+    def load_data(self) -> None:
+        """Load the data from the CSV file."""
+        log_file = find_log_file()
+        self.log_message(f"Loading data from {log_file}")
+        with open(log_file) as file:
+            reader = csv.DictReader(file)
+            self.all_rows = list(reader)  # Store all original rows
+            self.filtered_rows = self.all_rows.copy()  # Initialize filtered rows with all rows
+            for row in self.all_rows:
+                self.total_rows += 1
+                for col, value in row.items():
+                    self.data[str(col)][str(value)] += 1
+        self.log_message(f"Loaded {self.total_rows} rows of data")
+        self.log_message(f"Columns found: {', '.join(self.data.keys())}")
+
     def setup_data_table(self) -> None:
         """Set up the DataTable with sortable headers."""
         table = self.query_one(DataTable)
@@ -147,6 +162,21 @@ class SignInAnalysisApp(App):
         table.add_column("Count", key="count")
         table.add_column("Percentage", key="percentage")
         table.cursor_type = "row"
+
+    def populate_tree(self) -> None:
+        """Populate the tree with the columns."""
+        tree = self.query_one("#column_tree", Tree)
+        for column in self.data:
+            tree.root.add(str(column))
+        tree.root.expand()  # Expand the root node to show all columns
+        self.log_message(f"Populated tree with {len(self.data)} columns")
+
+    def on_tree_node_selected(self, event: Tree.NodeSelected) -> None:
+        """Update the details when a tree node is selected."""
+        self.selected_column = str(event.node.label)
+        self.query_one("#filter_input").value = ""
+        self.log_message(f"Selected column: {self.selected_column}")
+        self.update_details()
 
     def on_data_table_header_selected(self, event: DataTable.HeaderSelected) -> None:
         """Handle sorting when a column header is clicked."""
@@ -157,11 +187,6 @@ class SignInAnalysisApp(App):
             self.sort_reverse = False
         self.update_details()
 
-    @on(Button.Pressed, "#apply_filter")
-    def on_apply_filter(self) -> None:
-        """Handle apply filter button press."""
-        self.apply_filter()
-
     def on_clear_filters(self) -> None:
         """Handle clear filters button press."""
         self.global_filter.clear()
@@ -170,11 +195,6 @@ class SignInAnalysisApp(App):
         self.update_global_filter_info()
         self.update_details()
         self.log_message("Cleared all filters.")
-
-    @on(Input.Submitted, "#filter_input")
-    def on_filter_submitted(self) -> None:
-        """Handle filter input submission (Enter key)."""
-        self.apply_filter()
 
     def apply_filter(self) -> None:
         """Apply the filter to the current column data and update global filter."""
@@ -194,6 +214,23 @@ class SignInAnalysisApp(App):
         self.update_details()
         self.log_message(f"Applied filter to {self.selected_column}: '{filter_text}'")
 
+    @on(Button.Pressed, "#apply_filter")
+    def on_apply_filter(self) -> None:
+        """Handle apply filter button press."""
+        self.apply_filter()
+
+    @on(Input.Submitted, "#filter_input")
+    def on_filter_submitted(self) -> None:
+        """Handle filter input submission (Enter key)."""
+        self.apply_filter()
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle button presses."""
+        if event.button.id == "apply_filter":
+            self.apply_filter()
+        elif event.button.id == "clear_filters":
+            self.on_clear_filters()
+
     def apply_global_filter(self) -> None:
         """Apply global filter to the entire dataset."""
         if not self.global_filter:
@@ -206,42 +243,16 @@ class SignInAnalysisApp(App):
             if all(row.get(col, "") in values for col, values in self.global_filter.items())
         ]
 
-    def populate_tree(self) -> None:
-        """Populate the tree with the columns."""
-        tree = self.query_one("#column_tree", Tree)
-        for column in self.data:
-            tree.root.add(str(column))
-        tree.root.expand()  # Expand the root node to show all columns
-        self.log_message(f"Populated tree with {len(self.data)} columns")
-
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        """Handle button presses."""
-        if event.button.id == "apply_filter":
-            self.apply_filter()
-        elif event.button.id == "clear_filters":
-            self.on_clear_filters()
-
-    def load_data(self) -> None:
-        """Load the data from the CSV file."""
-        log_file = find_log_file()
-        self.log_message(f"Loading data from {log_file}")
-        with open(log_file) as file:
-            reader = csv.DictReader(file)
-            self.all_rows = list(reader)  # Store all original rows
-            self.filtered_rows = self.all_rows.copy()  # Initialize filtered rows with all rows
-            for row in self.all_rows:
-                self.total_rows += 1
-                for col, value in row.items():
-                    self.data[str(col)][str(value)] += 1
-        self.log_message(f"Loaded {self.total_rows} rows of data")
-        self.log_message(f"Columns found: {', '.join(self.data.keys())}")
-
-    def on_tree_node_selected(self, event: Tree.NodeSelected) -> None:
-        """Update the details when a tree node is selected."""
-        self.selected_column = str(event.node.label)
-        self.query_one("#filter_input").value = ""
-        self.log_message(f"Selected column: {self.selected_column}")
-        self.update_details()
+    def update_global_filter_info(self) -> None:
+        """Update the global filter information display."""
+        filter_info = "Global Filter: "
+        if self.global_filter:
+            filter_info += ", ".join(
+                f"{col} ({len(values)} values)" for col, values in self.global_filter.items()
+            )
+        else:
+            filter_info += "None"
+        self.query_one("#global_filter_info").update(filter_info)
 
     def update_details(self) -> None:
         """Update the details table with the selected column data."""
@@ -311,17 +322,6 @@ class SignInAnalysisApp(App):
 
         self.log_message(f"Updated table with {len(table_data)} rows for {self.selected_column}")
         table.refresh(layout=True)
-
-    def update_global_filter_info(self) -> None:
-        """Update the global filter information display."""
-        filter_info = "Global Filter: "
-        if self.global_filter:
-            filter_info += ", ".join(
-                f"{col} ({len(values)} values)" for col, values in self.global_filter.items()
-            )
-        else:
-            filter_info += "None"
-        self.query_one("#global_filter_info").update(filter_info)
 
     def log_message(self, message: str) -> None:
         """Log a message to the RichLog widget."""
