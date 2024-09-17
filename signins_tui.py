@@ -250,7 +250,7 @@ class SignInAnalysisApp(App):
 
         header.update(f"Details for: {self.selected_column}")
 
-        table.clear()
+        table.clear(columns=True)
 
         # Count occurrences in filtered rows
         filtered_data = defaultdict(int)
@@ -261,11 +261,23 @@ class SignInAnalysisApp(App):
         sorted_data = list(filtered_data.items())
         total_filtered_count = sum(count for _, count in sorted_data)
 
-        # Prepare data for sorting
-        table_data = [
-            (str(value), count, f"{(count / total_filtered_count) * 100:.2f}%")
-            for value, count in sorted_data
-        ]
+        # Prepare data for sorting and calculate max widths
+        table_data = []
+        max_value_width = len("Value")
+        max_count_width = len("Count")
+        max_percentage_width = len("Percentage")
+
+        for value, count in sorted_data:
+            percentage = (count / total_filtered_count) * 100 if total_filtered_count > 0 else 0
+            percentage_str = f"{percentage:.2f}%"
+            table_data.append((str(value), count, percentage_str))
+
+            max_value_width = max(max_value_width, len(str(value)))
+            max_count_width = max(max_count_width, len(str(count)))
+            max_percentage_width = max(max_percentage_width, len(percentage_str))
+
+        # Log sorting information
+        self.log_message(f"Sorting by: {self.sort_column}, Reverse: {self.sort_reverse}")
 
         # Sort the data based on the selected column and direction
         if self.sort_column == "value":
@@ -274,6 +286,16 @@ class SignInAnalysisApp(App):
             table_data.sort(key=lambda x: x[1], reverse=self.sort_reverse)
         elif self.sort_column == "percentage":
             table_data.sort(key=lambda x: float(x[2][:-1]), reverse=self.sort_reverse)
+        else:  # Default sort by count in descending order
+            table_data.sort(key=lambda x: x[1], reverse=True)
+
+        # Log first few items after sorting
+        self.log_message(f"First few items after sorting: {table_data[:5]}")
+
+        # Add columns with calculated widths
+        table.add_column("Value", key="value", width=max_value_width)
+        table.add_column("Count", key="count", width=max_count_width)
+        table.add_column("Percentage", key="percentage", width=max_percentage_width)
 
         # Add rows to the table
         for row in table_data:
@@ -282,9 +304,8 @@ class SignInAnalysisApp(App):
         if not table_data:
             table.add_row("No data available", "", "")
 
-        table.refresh(layout=True)
-
         self.log_message(f"Updated table with {len(table_data)} rows for {self.selected_column}")
+        table.refresh(layout=True)
 
     def update_global_filter_info(self) -> None:
         """Update the global filter information display."""
