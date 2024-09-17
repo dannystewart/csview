@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
 
-"""Analyze user sign-ins based on a CSV audit log export from Microsoft Entra."""
+"""View a CSV file using a textual interface."""
 
 from __future__ import annotations
 
 import csv
-import glob
-import os
-import sys
 from collections import defaultdict
 from datetime import datetime
 
+import click
 from rich import traceback
 from textual import on
 from textual.app import App, ComposeResult
@@ -19,28 +17,11 @@ from textual.reactive import reactive
 from textual.widgets import Button, DataTable, Footer, Header, Input, RichLog, Static, Tree
 from zoneinfo import ZoneInfo
 
-from dsutil.text import print_colored
-
 traceback.install()
 
 
-def find_log_file() -> str:
-    """Find the most recent CSV file with 'SignIns' in the name or use command-line argument."""
-    if len(sys.argv) > 1:
-        return sys.argv[1]
-
-    csv_files = glob.glob("*SignIns*.csv")
-    if not csv_files:
-        print_colored("No CSV files with 'SignIns' in the name found.", "red")
-        sys.exit(1)
-
-    newest_file = max(csv_files, key=os.path.getctime)
-    print_colored(f"Using file: {newest_file}", "green")
-    return newest_file
-
-
-class SignInAnalysisApp(App):
-    """Analyze user sign-ins based on a CSV audit log export from Microsoft Entra."""
+class ViewerApp(App):
+    """View a CSV file using a textual interface."""
 
     CSS = """
         #column_tree {
@@ -104,10 +85,11 @@ class SignInAnalysisApp(App):
     sort_column: str = reactive("")
     sort_reverse: bool = reactive(False)
 
-    def __init__(self):
+    def __init__(self, filename: str):
         super().__init__()
-        self.all_rows = []  # Store all original rows
-        self.filtered_rows = []
+        self.filename: str = filename
+        self.all_rows: list = []  # Store all original rows
+        self.filtered_rows: list = []
 
     def compose(self) -> ComposeResult:
         """Compose the application layout."""
@@ -137,10 +119,9 @@ class SignInAnalysisApp(App):
         self.setup_data_table()
 
     def load_data(self) -> None:
-        """Load the data from the CSV file."""
-        log_file = find_log_file()
-        self.log_message(f"Loading data from {log_file}")
-        with open(log_file) as file:
+        """Load the data from a CSV file."""
+        self.log_message(f"Loading data from {self.filename}")
+        with open(self.filename) as file:
             reader = csv.DictReader(file)
             self.all_rows = list(reader)  # Store all original rows
             self.filtered_rows = self.all_rows.copy()  # Initialize filtered rows with all rows
@@ -326,6 +307,13 @@ class SignInAnalysisApp(App):
         log_widget.write(f"[{timestamp}] {message}")
 
 
-if __name__ == "__main__":
-    app = SignInAnalysisApp()
+@click.command()
+@click.argument("filename", type=click.Path(exists=True))
+def main(filename: str) -> None:
+    """Run the application."""
+    app = ViewerApp(filename)
     app.run()
+
+
+if __name__ == "__main__":
+    main()
