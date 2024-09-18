@@ -39,6 +39,11 @@ class ViewerApp(App):
             height: 1fr;
         }
 
+        DataTable > .datatable--cursor {
+            background: $accent;
+            color: $text;
+        }
+
         #details_header {
             height: 5%;
             padding: 1 2;
@@ -80,6 +85,7 @@ class ViewerApp(App):
     data: dict[str, dict[str, int]] = reactive(defaultdict(lambda: defaultdict(int)))
     total_rows: int = reactive(0)
     selected_column: str = reactive("")
+    selected_row: int | None = reactive(None)
     global_filter: dict[str, set] = reactive({})
     filtered_data: dict[str, dict[str, int]] = reactive(defaultdict(lambda: defaultdict(int)))
     sort_column: str = reactive("")
@@ -104,7 +110,7 @@ class ViewerApp(App):
                 Button("Clear Filters", id="clear_filters"),
                 id="filter_container",
             ),
-            DataTable(id="details_table"),
+            DataTable(id="details_table", show_cursor=True),
             id="main_container",
         )
         yield Container(RichLog(id="log"), id="log_container")
@@ -117,6 +123,7 @@ class ViewerApp(App):
         self.populate_tree()
         self.query_one("#column_tree").root.expand()
         self.setup_data_table()
+        self.query_one(DataTable).focus()
 
     def load_data(self) -> None:
         """Load the data from a CSV file."""
@@ -164,6 +171,35 @@ class ViewerApp(App):
             self.sort_reverse = False
         self.update_details()
 
+    def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
+        """Handle row selection in the DataTable."""
+        self.selected_row = event.row_key
+        table = self.query_one(DataTable)
+        row = table.get_row(event.row_key)
+        selected_value = row[0] if row else ""
+        self.query_one("#filter_input").value = str(selected_value)
+        self.log_message(f"Selected row: {selected_value}")
+
+    def apply_filter(self) -> None:
+        """Apply the filter to the current column data and update global filter."""
+        filter_text = self.query_one("#filter_input").value.strip()
+        self.log_message(f"Applying filter - Text: '{filter_text}', Column: {self.selected_column}")
+
+        if filter_text:
+            if self.selected_column not in self.global_filter:
+                self.global_filter[self.selected_column] = set()
+            self.global_filter[self.selected_column].add(filter_text)
+            self.log_message(f"Added to global filter: {self.selected_column}: {filter_text}")
+        elif self.selected_column in self.global_filter:
+            del self.global_filter[self.selected_column]
+            self.log_message(f"Removed from global filter: {self.selected_column}")
+
+        self.apply_global_filter()
+        self.update_global_filter_info()
+        self.update_details()
+        self.log_message(f"Global filter after update: {self.global_filter}")
+        self.selected_row = None  # Reset selected row after applying filter
+
     def on_clear_filters(self) -> None:
         """Handle clear filters button press."""
         self.global_filter.clear()
@@ -173,23 +209,25 @@ class ViewerApp(App):
         self.update_details()
         self.log_message("Cleared all filters.")
 
-    def apply_filter(self) -> None:
-        """Apply the filter to the current column data and update global filter."""
-        filter_text = self.query_one("#filter_input").value.lower()
-        if filter_text:
-            filtered_values = {
-                value
-                for value in self.data[self.selected_column]
-                if filter_text in str(value).lower()
-            }
-            self.global_filter[self.selected_column] = filtered_values
-        elif self.selected_column in self.global_filter:
-            del self.global_filter[self.selected_column]
+    def apply_global_filter(self) -> None:
+        """Apply global filter to the entire dataset."""
+        if not self.global_filter:
+            self.filtered_rows = self.all_rows.copy()  # Reset to original data
+            self.log_message("No global filter, using all rows")
+            return
 
-        self.apply_global_filter()  # Apply the filter to the entire dataset
-        self.update_global_filter_info()
-        self.update_details()
-        self.log_message(f"Applied filter to {self.selected_column}: '{filter_text}'")
+        self.log_message(f"Applying global filter: {self.global_filter}")
+        self.filtered_rows = [
+            row
+            for row in self.all_rows
+            if all(
+                any(
+                    filter_value.lower() in str(row.get(col, "")).lower() for filter_value in values
+                )
+                for col, values in self.global_filter.items()
+            )
+        ]
+        self.log_message(f"Filtered rows count: {len(self.filtered_rows)}")
 
     @on(Button.Pressed, "#apply_filter")
     def on_apply_filter(self) -> None:
@@ -207,18 +245,6 @@ class ViewerApp(App):
             self.apply_filter()
         elif event.button.id == "clear_filters":
             self.on_clear_filters()
-
-    def apply_global_filter(self) -> None:
-        """Apply global filter to the entire dataset."""
-        if not self.global_filter:
-            self.filtered_rows = self.all_rows.copy()  # Reset to original data
-            return
-
-        self.filtered_rows = [
-            row
-            for row in self.all_rows
-            if all(row.get(col, "") in values for col, values in self.global_filter.items())
-        ]
 
     def update_global_filter_info(self) -> None:
         """Update the global filter information display."""
@@ -290,6 +316,9 @@ class ViewerApp(App):
         table.add_column("Count", key="count", width=max_count_width)
         table.add_column("Percentage", key="percentage", width=max_percentage_width)
 
+        self.log_message(f"Updating details for column: {self.selected_column}")
+        self.log_message(f"Total filtered rows: {len(self.filtered_rows)}")
+
         # Add rows to the table
         for row in table_data:
             table.add_row(*row)
@@ -301,10 +330,18 @@ class ViewerApp(App):
         table.refresh(layout=True)
 
     def log_message(self, message: str) -> None:
-        """Log a message to the RichLog widget."""
+        """Log a message to the RichLog widget and debug file."""
         log_widget = self.query_one(RichLog)
         timestamp = datetime.now(tz=ZoneInfo("America/New_York")).strftime("%I:%M:%S %p")
-        log_widget.write(f"[{timestamp}] {message}")
+        log_message = f"[{timestamp}] {message}"
+        log_widget.write(log_message)
+        self.write_debug(log_message)
+
+    def write_debug(self, message: str) -> None:
+        """Write a debug message to a file."""
+        timestamp = datetime.now(tz=ZoneInfo("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
+        with open("debug_log.txt", "a") as f:
+            f.write(f"{timestamp}: {message}\n")
 
 
 @click.command()
