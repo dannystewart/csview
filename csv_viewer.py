@@ -96,16 +96,18 @@ class CSVViewer(App):
         table.cursor_type = "row"
 
     def populate_tree(self) -> None:
-        """Populate the tree with the columns."""
+        """Populate the tree with the columns and their unique value counts."""
         tree = self.query_one("#column_tree", Tree)
-        for column in self.data:
-            tree.root.add(str(column))
+        for column, values in self.data.items():
+            unique_count = len(values)
+            node_label = f"{column} ({unique_count})"
+            tree.root.add_leaf(node_label)
         tree.root.expand()  # Expand the root node to show all columns
         self.print_log(f"Populated tree with {len(self.data)} columns")
 
     def on_tree_node_selected(self, event: Tree.NodeSelected) -> None:
         """Update the details when a tree node is selected."""
-        self.selected_column = str(event.node.label)
+        self.selected_column = str(event.node.label).split(" (")[0]  # Extract just the column name
         self.query_one("#filter_input").value = ""
         self.print_log(f"Selected column: {self.selected_column}")
         self.update_details()
