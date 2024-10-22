@@ -46,7 +46,7 @@ DataTable > .datatable--cursor {
 }
 
 #log_container {
-    height: 15%;
+    height: 18%;
     dock: bottom;
     border: solid $accent;
     border-title-align: center;
