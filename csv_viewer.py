@@ -27,6 +27,9 @@ class CSVViewer(App):
 
     CSS_PATH = os.path.join(os.path.dirname(__file__), "csv_viewer.css")
 
+    # Style settings
+    MIN_VALUE_WIDTH = 25  # Minimum width for the "Value" column
+
     with open(CSS_PATH) as css_file:
         CSS = css_file.read()
 
@@ -90,7 +93,7 @@ class CSVViewer(App):
     def setup_data_table(self) -> None:
         """Set up the DataTable with sortable headers."""
         table = self.query_one(DataTable)
-        table.add_column("Value", key="value")
+        table.add_column("Value", key="value", width=self.MIN_VALUE_WIDTH)
         table.add_column("Count", key="count")
         table.add_column("Percentage", key="percentage")
         table.cursor_type = "row"
@@ -241,6 +244,9 @@ class CSVViewer(App):
             max_value_width = max(max_value_width, len(str(value)))
             max_count_width = max(max_count_width, len(str(count)))
             max_percentage_width = max(max_percentage_width, len(percentage_str))
+
+        # Set minimum width for value to avoid having a tiny column
+        max_value_width = max(max_value_width, self.MIN_VALUE_WIDTH)
 
         # Set default sorting if not specified
         if not self.sort_column:
