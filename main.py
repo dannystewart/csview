@@ -9,7 +9,6 @@ from collections import defaultdict
 from datetime import datetime
 
 import click
-from rich import traceback
 from textual import on
 from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal
@@ -17,10 +16,12 @@ from textual.reactive import reactive
 from textual.widgets import Button, DataTable, Footer, Header, Input, RichLog, Static, Tree
 from zoneinfo import ZoneInfo
 
-traceback.install()
+from dsutil.errors import configure_traceback
+
+configure_traceback()
 
 
-class ViewerApp(App):
+class CSVViewer(App):
     """View a CSV file using a textual interface."""
 
     CSS = """
@@ -118,7 +119,7 @@ class ViewerApp(App):
 
     def on_mount(self) -> None:
         """Load the data and populate the tree."""
-        self.log_message("Application mounted. Loading data...")
+        self.print_log("Application mounted. Loading data...")
         self.load_data()
         self.populate_tree()
         self.query_one("#column_tree").root.expand()
@@ -127,7 +128,7 @@ class ViewerApp(App):
 
     def load_data(self) -> None:
         """Load the data from a CSV file."""
-        self.log_message(f"Loading data from {self.filename}")
+        self.print_log(f"Loading data from {self.filename}")
         with open(self.filename) as file:
             reader = csv.DictReader(file)
             self.all_rows = list(reader)  # Store all original rows
@@ -136,8 +137,8 @@ class ViewerApp(App):
                 self.total_rows += 1
                 for col, value in row.items():
                     self.data[str(col)][str(value)] += 1
-        self.log_message(f"Loaded {self.total_rows} rows of data")
-        self.log_message(f"Columns found: {', '.join(self.data.keys())}")
+        self.print_log(f"Loaded {self.total_rows} rows of data")
+        self.print_log(f"Columns found: {', '.join(self.data.keys())}")
 
     def setup_data_table(self) -> None:
         """Set up the DataTable with sortable headers."""
@@ -153,13 +154,13 @@ class ViewerApp(App):
         for column in self.data:
             tree.root.add(str(column))
         tree.root.expand()  # Expand the root node to show all columns
-        self.log_message(f"Populated tree with {len(self.data)} columns")
+        self.print_log(f"Populated tree with {len(self.data)} columns")
 
     def on_tree_node_selected(self, event: Tree.NodeSelected) -> None:
         """Update the details when a tree node is selected."""
         self.selected_column = str(event.node.label)
         self.query_one("#filter_input").value = ""
-        self.log_message(f"Selected column: {self.selected_column}")
+        self.print_log(f"Selected column: {self.selected_column}")
         self.update_details()
 
     def on_data_table_header_selected(self, event: DataTable.HeaderSelected) -> None:
@@ -178,26 +179,26 @@ class ViewerApp(App):
         row = table.get_row(event.row_key)
         selected_value = row[0] if row else ""
         self.query_one("#filter_input").value = str(selected_value)
-        self.log_message(f"Selected row: {selected_value}")
+        self.print_log(f"Selected row: {selected_value}")
 
     def apply_filter(self) -> None:
         """Apply the filter to the current column data and update global filter."""
         filter_text = self.query_one("#filter_input").value.strip()
-        self.log_message(f"Applying filter - Text: '{filter_text}', Column: {self.selected_column}")
+        self.print_log(f"Applying filter - Text: '{filter_text}', Column: {self.selected_column}")
 
         if filter_text:
             if self.selected_column not in self.global_filter:
                 self.global_filter[self.selected_column] = set()
             self.global_filter[self.selected_column].add(filter_text)
-            self.log_message(f"Added to global filter: {self.selected_column}: {filter_text}")
+            self.print_log(f"Added to global filter: {self.selected_column}: {filter_text}")
         elif self.selected_column in self.global_filter:
             del self.global_filter[self.selected_column]
-            self.log_message(f"Removed from global filter: {self.selected_column}")
+            self.print_log(f"Removed from global filter: {self.selected_column}")
 
         self.apply_global_filter()
         self.update_global_filter_info()
         self.update_details()
-        self.log_message(f"Global filter after update: {self.global_filter}")
+        self.print_log(f"Global filter after update: {self.global_filter}")
         self.selected_row = None  # Reset selected row after applying filter
 
     def on_clear_filters(self) -> None:
@@ -207,16 +208,16 @@ class ViewerApp(App):
         self.query_one("#filter_input").value = ""
         self.update_global_filter_info()
         self.update_details()
-        self.log_message("Cleared all filters.")
+        self.print_log("Cleared all filters.")
 
     def apply_global_filter(self) -> None:
         """Apply global filter to the entire dataset."""
         if not self.global_filter:
             self.filtered_rows = self.all_rows.copy()  # Reset to original data
-            self.log_message("No global filter, using all rows")
+            self.print_log("No global filter, using all rows")
             return
 
-        self.log_message(f"Applying global filter: {self.global_filter}")
+        self.print_log(f"Applying global filter: {self.global_filter}")
         self.filtered_rows = [
             row
             for row in self.all_rows
@@ -227,7 +228,7 @@ class ViewerApp(App):
                 for col, values in self.global_filter.items()
             )
         ]
-        self.log_message(f"Filtered rows count: {len(self.filtered_rows)}")
+        self.print_log(f"Filtered rows count: {len(self.filtered_rows)}")
 
     @on(Button.Pressed, "#apply_filter")
     def on_apply_filter(self) -> None:
@@ -298,7 +299,7 @@ class ViewerApp(App):
             self.sort_reverse = True
 
         # Log sorting information
-        self.log_message(f"Sorting by: {self.sort_column}, Reverse: {self.sort_reverse}")
+        self.print_log(f"Sorting by: {self.sort_column}, Reverse: {self.sort_reverse}")
 
         # Sort the data based on the selected column and direction
         if self.sort_column == "value":
@@ -309,15 +310,15 @@ class ViewerApp(App):
             table_data.sort(key=lambda x: float(x[2][:-1]), reverse=self.sort_reverse)
 
         # Log first few items after sorting
-        self.log_message(f"First few items after sorting: {table_data[:5]}")
+        self.print_log(f"First few items after sorting: {table_data[:5]}")
 
         # Add columns with calculated widths
         table.add_column("Value", key="value", width=max_value_width)
         table.add_column("Count", key="count", width=max_count_width)
         table.add_column("Percentage", key="percentage", width=max_percentage_width)
 
-        self.log_message(f"Updating details for column: {self.selected_column}")
-        self.log_message(f"Total filtered rows: {len(self.filtered_rows)}")
+        self.print_log(f"Updating details for column: {self.selected_column}")
+        self.print_log(f"Total filtered rows: {len(self.filtered_rows)}")
 
         # Add rows to the table
         for row in table_data:
@@ -326,18 +327,18 @@ class ViewerApp(App):
         if not table_data:
             table.add_row("No data available", "", "")
 
-        self.log_message(f"Updated table with {len(table_data)} rows for {self.selected_column}")
+        self.print_log(f"Updated table with {len(table_data)} rows for {self.selected_column}")
         table.refresh(layout=True)
 
-    def log_message(self, message: str) -> None:
+    def print_log(self, message: str) -> None:
         """Log a message to the RichLog widget and debug file."""
         log_widget = self.query_one(RichLog)
         timestamp = datetime.now(tz=ZoneInfo("America/New_York")).strftime("%I:%M:%S %p")
         log_message = f"[{timestamp}] {message}"
         log_widget.write(log_message)
-        self.write_debug(log_message)
+        self.log_to_file(log_message)
 
-    def write_debug(self, message: str) -> None:
+    def log_to_file(self, message: str) -> None:
         """Write a debug message to a file."""
         timestamp = datetime.now(tz=ZoneInfo("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
         with open("debug_log.txt", "a") as f:
@@ -348,7 +349,7 @@ class ViewerApp(App):
 @click.argument("filename", type=click.Path(exists=True))
 def main(filename: str) -> None:
     """Run the application."""
-    app = ViewerApp(filename)
+    app = CSVViewer(filename)
     app.run()
 
 
