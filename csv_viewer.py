@@ -258,9 +258,6 @@ class CSVViewer(App):
         elif self.sort_column == "percentage":
             table_data.sort(key=lambda x: float(x[2][:-1]), reverse=self.sort_reverse)
 
-        # Log first few items after sorting
-        self.print_log(f"First few items after sorting: {table_data[:5]}")
-
         # Add columns with calculated widths
         table.add_column("Value", key="value", width=max_value_width)
         table.add_column("Count", key="count", width=max_count_width)
