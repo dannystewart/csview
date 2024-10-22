@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"explorerExclude.backup": {},
+		"css.validate": false,
+	}
+}

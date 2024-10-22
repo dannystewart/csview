@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import csv
+import os
 from collections import defaultdict
 from datetime import datetime
 
@@ -24,64 +25,10 @@ configure_traceback()
 class CSVViewer(App):
     """View a CSV file using a textual interface."""
 
-    CSS = """
-        #column_tree {
-            width: 25%;
-            height: 100%;
-            dock: left;
-        }
+    CSS_PATH = os.path.join(os.path.dirname(__file__), "csv_viewer.css")
 
-        #main_container {
-            width: 1fr;
-            height: 100%;
-        }
-
-        DataTable {
-            height: 1fr;
-        }
-
-        DataTable > .datatable--cursor {
-            background: $accent;
-            color: $text;
-        }
-
-        #details_header {
-            height: 5%;
-            padding: 1 2;
-        }
-
-        #filter_container {
-            height: auto;
-            padding: 1 2;
-        }
-
-        #global_filter_info {
-            height: auto;
-            padding: 1 2;
-            color: $accent;
-        }
-
-        #filter_input {
-            width: 70%;
-        }
-
-        #apply_filter, #clear_filters {
-            width: 15%;
-        }
-
-        #log_container {
-            height: 15%;
-            dock: bottom;
-            border: solid $accent;
-            border-title-align: center;
-        }
-
-        #log {
-            height: 100%;
-            border: none;
-            padding: 0 1;
-        }
-    """
+    with open(CSS_PATH) as css_file:
+        CSS = css_file.read()
 
     data: dict[str, dict[str, int]] = reactive(defaultdict(lambda: defaultdict(int)))
     total_rows: int = reactive(0)
