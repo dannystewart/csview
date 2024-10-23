@@ -108,6 +108,26 @@ class CSVViewer(App):
         tree.root.expand()  # Expand the root node to show all columns
         self.print_log(f"Populated tree with {len(self.data)} columns")
 
+    def update_tree_counts(self) -> None:
+        """Update the counts in the tree nodes based on the filtered data."""
+        counts = {}
+
+        # Recalculate column counts based on filtered rows
+        for col in self.data:
+            unique_values = set()
+            for row in self.filtered_rows:
+                value = row.get(col, "")
+                value = "(no value)" if value in (None, "") else value
+                unique_values.add(value)
+            counts[col] = len(unique_values)
+
+        # Update the tree node labels with new counts
+        tree = self.query_one("#column_tree", Tree)
+        for node in tree.root.children:
+            col_name = str(node.label).split(" (")[0]
+            count = counts.get(col_name, 0)
+            node.set_label(f"{col_name} ({count})")
+
     def on_tree_node_selected(self, event: Tree.NodeSelected) -> None:
         """Update the details when a tree node is selected."""
         self.selected_column = str(event.node.label).split(" (")[0]  # Extract just the column name
@@ -159,6 +179,7 @@ class CSVViewer(App):
         self.filtered_rows = self.all_rows.copy()  # Reset to original data
         self.query_one("#filter_input").value = ""
         self.update_global_filter_info()
+        self.update_tree_counts()  # Update counts after clearing filters
         self.update_details()
         self.print_log("Cleared all filters.")
 
@@ -167,20 +188,21 @@ class CSVViewer(App):
         if not self.global_filter:
             self.filtered_rows = self.all_rows.copy()  # Reset to original data
             self.print_log("No global filter, using all rows")
-            return
-
-        self.print_log(f"Applying global filter: {self.global_filter}")
-        self.filtered_rows = [
-            row
-            for row in self.all_rows
-            if all(
-                any(
-                    filter_value.lower() in str(row.get(col, "")).lower() for filter_value in values
+        else:
+            self.print_log(f"Applying global filter: {self.global_filter}")
+            self.filtered_rows = [
+                row
+                for row in self.all_rows
+                if all(
+                    any(
+                        filter_value.lower() in str(row.get(col, "")).lower()
+                        for filter_value in values
+                    )
+                    for col, values in self.global_filter.items()
                 )
-                for col, values in self.global_filter.items()
-            )
-        ]
-        self.print_log(f"Filtered rows count: {len(self.filtered_rows)}")
+            ]
+            self.print_log(f"Filtered rows count: {len(self.filtered_rows)}")
+        self.update_tree_counts()  # Update counts after filtering
 
     @on(Button.Pressed, "#apply_filter")
     def on_apply_filter(self) -> None:
