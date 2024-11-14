@@ -8,6 +8,7 @@ import csv
 import os
 from collections import defaultdict
 from datetime import datetime
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import click
@@ -327,8 +328,12 @@ class CSVViewer(App):
 
     def log_to_file(self, message: str) -> None:
         """Write a debug message to a file."""
+        log_dir = Path.home() / ".local" / "share" / "csv_viewer" / "logs"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_file = log_dir / "app.log"
+
         timestamp = datetime.now(tz=ZoneInfo("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
-        with open("debug_log.txt", "a") as f:
+        with open(log_file, "a") as f:
             f.write(f"{timestamp}: {message}\n")
 
 
