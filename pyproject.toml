@@ -3,93 +3,24 @@ name = "csv-viewer"
 version = "0.1.0"
 description = "CSV Viewer is a text-based CSV viewer for the terminal."
 authors = ["Danny Stewart <danny@stewart.cc>"]
-readme = "README.md"
+packages = [{include = "csv_viewer", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
-pandas = "^2.2.2"
+dsutil = {git = "https://gitlab.dannystewart.com/danny/dsutil.git"}
+click = "^8.1.7"
 matplotlib = "^3.9.2"
 openpyxl = "^3.1.5"
+pandas = "^2.2.2"
 rich = "^13.8.1"
 seaborn = "^0.13.2"
 tabulate = "^0.9.0"
 termcolor = "^2.4.0"
 textual = "^0.79.1"
-click = "^8.1.7"
+
+[tool.poetry.scripts]
+csv-viewer = "csv_viewer.csv_viewer:main"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-
-[tool.ruff.lint]
-select = [
-    "A",
-    "ANN",
-    "ARG",
-    "B",
-    "C",
-    "C4",
-    "COM",
-    "D",
-    "DTZ",
-    "E",
-    "EM",
-    "F",
-    "FA",
-    "FIX",
-    "G001",
-    "G003",
-    "G004",
-    "G010",
-    "G201",
-    "G202",
-    "ISC",
-    "N",
-    "PIE",
-    "Q",
-    "R",
-    "RET",
-    "RSE",
-    "SIM",
-    "SLF",
-    "T20",
-    "TCH",
-    "TD",
-    "TID",
-    "UP",
-    "W"
-]
-ignore = [
-    "ANN101",
-    "ANN102",
-    "ANN204",
-    "ANN401",
-    "B010",
-    "COM812",
-    "D104",
-    "D105",
-    "D107",
-    "D201",
-    "D202",
-    "D203",
-    "D204",
-    "D205",
-    "D206",
-    "D212",
-    "D400",
-    "D406",
-    "D407",
-    "D413",
-    "E261",
-    "E303",
-    "E501",
-    "RET502",
-    "RET503",
-    "SIM102",
-    "T201",
-    "TD001",
-    "TD002",
-    "TD003",
-    "W291",
-    "W293"
-]

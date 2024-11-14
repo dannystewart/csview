@@ -311,6 +311,19 @@ class CSVViewer(App):
         if not table_data:
             table.add_row("No data available", "", "")
 
+        if table.row_count > 0:
+            # Focus the DataTable and set the cursor to the first cell
+            table.focus()
+            table.cursor_coordinate = (0, 0)
+            # Select the first cell
+            table.selection = {(0, 0)}
+            # Get the column index for the "value" column
+            value_column_index = table.get_column_index("value")
+            # Get the value from the first row's "Value" column
+            first_row_value = table.get_cell_at((0, value_column_index))
+            # Populate the "Apply Filter" input with this value
+            self.query_one("#filter_input", Input).value = first_row_value
+
         self.print_log(f"Updated table with {len(table_data)} rows for {self.selected_column}")
         table.refresh(layout=True)
 
