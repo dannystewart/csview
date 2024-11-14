@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# type: ignore
 
 """View a CSV file using a textual interface."""
 
@@ -34,14 +35,18 @@ class CSVViewer(App):
     with open(CSS_PATH) as css_file:
         CSS = css_file.read()
 
-    data: dict[str, dict[str, int]] = reactive(defaultdict(lambda: defaultdict(int)))
-    total_rows: int = reactive(0)
-    selected_column: str = reactive("")
-    selected_row: int | None = reactive(None)
-    global_filter: dict[str, set] = reactive({})
-    filtered_data: dict[str, dict[str, int]] = reactive(defaultdict(lambda: defaultdict(int)))
-    sort_column: str = reactive("")
-    sort_reverse: bool = reactive(False)
+    data: reactive[defaultdict[str, defaultdict[str, int]]] = reactive(
+        defaultdict(lambda: defaultdict(int))
+    )
+    total_rows: reactive[int] = reactive(0)
+    selected_column: reactive[str] = reactive("")
+    selected_row: reactive[int] | reactive[None] = reactive(None)
+    global_filter: reactive[dict[str, set]] = reactive({})
+    filtered_data: reactive[defaultdict[str, defaultdict[str, int]]] = reactive(
+        defaultdict(lambda: defaultdict(int))
+    )
+    sort_column: reactive[str] = reactive("")
+    sort_reverse: reactive[bool] = reactive(False)
 
     def __init__(self, filename: str):
         super().__init__()
