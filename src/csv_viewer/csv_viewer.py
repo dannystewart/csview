@@ -8,6 +8,7 @@ import csv
 import os
 from collections import defaultdict
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import click
 from textual import on
@@ -15,7 +16,6 @@ from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal
 from textual.reactive import reactive
 from textual.widgets import Button, DataTable, Footer, Header, Input, RichLog, Static, Tree
-from zoneinfo import ZoneInfo
 
 from dsutil.errors import configure_traceback
 
@@ -128,21 +128,11 @@ class CSVViewer(App):
             count = counts.get(col_name, 0)
             node.set_label(f"{col_name} ({count})")
 
-    def on_tree_node_highlighted(self, event: Tree.NodeHighlighted) -> None:
-        """Update the details when a tree node is highlighted via keyboard."""
-        self._on_tree_node_highlighted_or_selected(event)
-
     def on_tree_node_selected(self, event: Tree.NodeSelected) -> None:
         """Update the details when a tree node is selected."""
-        self._on_tree_node_highlighted_or_selected(event)
-
-    def _on_tree_node_highlighted_or_selected(
-        self, event: Tree.NodeHighlighted | Tree.NodeSelected
-    ) -> None:
-        action = "Highlighted" if isinstance(event, Tree.NodeHighlighted) else "Selected"
         self.selected_column = str(event.node.label).split(" (")[0]  # Extract just the column name
         self.query_one("#filter_input").value = ""
-        self.print_log(f"{action} column: {self.selected_column}")
+        self.print_log(f"Selected column: {self.selected_column}")
         self.update_details()
 
     def on_data_table_header_selected(self, event: DataTable.HeaderSelected) -> None:
