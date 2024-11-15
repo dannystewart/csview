@@ -48,11 +48,12 @@ class CSVViewer(App):
     sort_column: reactive[str] = reactive("")
     sort_reverse: reactive[bool] = reactive(False)
 
-    def __init__(self, filename: str):
+    def __init__(self, filename: str, show_log: bool):
         super().__init__()
         self.filename: str = filename
         self.all_rows: list = []  # Store all original rows
         self.filtered_rows: list = []
+        self.show_log: bool = show_log
 
     def compose(self) -> ComposeResult:
         """Compose the application layout."""
@@ -70,7 +71,8 @@ class CSVViewer(App):
             DataTable(id="details_table", show_cursor=True),
             id="main_container",
         )
-        yield Container(RichLog(id="log"), id="log_container")
+        if self.show_log:
+            yield Container(RichLog(id="log"), id="log_container")
         yield Footer()
 
     def on_mount(self) -> None:
@@ -325,11 +327,12 @@ class CSVViewer(App):
 
     def print_log(self, message: str) -> None:
         """Log a message to the RichLog widget and debug file."""
-        log_widget = self.query_one(RichLog)
-        timestamp = datetime.now(tz=ZoneInfo("America/New_York")).strftime("%I:%M:%S %p")
-        log_message = f"[{timestamp}] {message}"
-        log_widget.write(log_message)
-        self.log_to_file(log_message)
+        if self.show_log:
+            log_widget = self.query_one(RichLog)
+            timestamp = datetime.now(tz=ZoneInfo("America/New_York")).strftime("%I:%M:%S %p")
+            log_message = f"[{timestamp}] {message}"
+            log_widget.write(log_message)
+        self.log_to_file(message)
 
     def log_to_file(self, message: str) -> None:
         """Write a debug message to a file."""
@@ -344,9 +347,10 @@ class CSVViewer(App):
 
 @click.command()
 @click.argument("filename", type=click.Path(exists=True))
-def main(filename: str) -> None:
+@click.option("--show-log", is_flag=True, help="Show the log viewer in the application")
+def main(filename: str, show_log: bool) -> None:
     """Run the application."""
-    app = CSVViewer(filename)
+    app = CSVViewer(filename, show_log)
     app.run()
 
 
