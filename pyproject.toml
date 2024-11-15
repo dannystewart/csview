@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "csv-viewer"
-version = "0.1.2"
+version = "0.2.0"
 description = "CSV Viewer is a text-based CSV viewer for the terminal."
 authors = ["Danny Stewart <danny@stewart.cc>"]
 packages = [{include = "csv_viewer", from = "src"}]
