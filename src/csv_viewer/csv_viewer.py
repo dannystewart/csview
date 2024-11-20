@@ -19,7 +19,7 @@ from textual.containers import Container, Horizontal
 from textual.reactive import reactive
 from textual.widgets import Button, DataTable, Footer, Header, Input, RichLog, Static, Tree
 
-from dsutil.errors import configure_traceback
+from dsutil.tools import configure_traceback
 
 configure_traceback()
 
