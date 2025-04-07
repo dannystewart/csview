@@ -30,14 +30,14 @@ csview path/to/your/file.csv --show-log
 
 ## How to Use
 
-1. **Navigate Columns**: Use the arrow keys to move through the column list
-2. **View Column Details**: Select a column to see its value distribution
+1. **Navigate Columns**: Use the arrow keys to move through the column list.
+2. **View Column Details**: Select a column to see its value distribution.
 3. **Filter Data**:
-   - Select a value in the details table
-   - Press Enter or click "Apply Filter" to filter the dataset
-4. **Clear Filters**: Click the "Clear Filters" button to reset
-5. **Sort Data**: Click on column headers in the details table to sort
+   - Select a value in the details table.
+   - Press Enter or click "Apply Filter" to filter the dataset.
+4. **Clear Filters**: Click the "Clear Filters" button to reset.
+5. **Sort Data**: Click on column headers in the details table to sort.
 
 ## License
 
-This project is licensed under the [MIT](LICENSE) license. Contributions are welcome! Please feel free to submit a pull request.
+This project is licensed under the [MIT](LICENSE) license. Contributions are welcome! Please feel free to submit a PR.
