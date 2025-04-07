@@ -6,33 +6,32 @@
 from __future__ import annotations
 
 import csv
-import os
+import operator
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import click
+from polykit.core import polykit_setup
 from textual import on
 from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal
 from textual.reactive import reactive
 from textual.widgets import Button, DataTable, Footer, Header, Input, RichLog, Static, Tree
 
-from dsutil.tools import configure_traceback
-
-configure_traceback()
+polykit_setup()
 
 
 class CSVViewer(App):
     """View a CSV file using a textual interface."""
 
-    CSS_PATH = os.path.join(os.path.dirname(__file__), "csv_viewer.css")
+    CSS_PATH = Path(Path.parent(__file__)) / "csv_viewer.css"
 
     # Style settings
     MIN_VALUE_WIDTH = 25  # Minimum width for the "Value" column
 
-    with open(CSS_PATH) as css_file:
+    with Path(CSS_PATH).open(encoding="utf-8") as css_file:
         CSS = css_file.read()
 
     data: reactive[defaultdict[str, defaultdict[str, int]]] = reactive(
@@ -87,7 +86,7 @@ class CSVViewer(App):
     def load_data(self) -> None:
         """Load the data from a CSV file."""
         self.print_log(f"Loading data from {self.filename}")
-        with open(self.filename) as file:
+        with Path(self.filename).open(encoding="utf-8") as file:
             reader = csv.DictReader(file)
             self.all_rows = list(reader)  # Store all original rows
             self.filtered_rows = self.all_rows.copy()  # Initialize filtered rows with all rows
@@ -125,7 +124,7 @@ class CSVViewer(App):
             unique_values = set()
             for row in self.filtered_rows:
                 value = row.get(col, "")
-                value = "(no value)" if value in (None, "") else value
+                value = "(no value)" if value in {None, ""} else value
                 unique_values.add(value)
             counts[col] = len(unique_values)
 
@@ -254,7 +253,7 @@ class CSVViewer(App):
         for row in self.filtered_rows:
             value = row.get(self.selected_column, "")
             # Replace empty or None values with "(no value)"
-            value = "(no value)" if value in (None, "") else value
+            value = "(no value)" if value in {None, ""} else value
             filtered_data[value] += 1
 
         sorted_data = list(filtered_data.items())
@@ -288,9 +287,9 @@ class CSVViewer(App):
 
         # Sort the data based on the selected column and direction
         if self.sort_column == "value":
-            table_data.sort(key=lambda x: x[0], reverse=self.sort_reverse)
+            table_data.sort(key=operator.itemgetter(0), reverse=self.sort_reverse)
         elif self.sort_column == "count":
-            table_data.sort(key=lambda x: x[1], reverse=self.sort_reverse)
+            table_data.sort(key=operator.itemgetter(1), reverse=self.sort_reverse)
         elif self.sort_column == "percentage":
             table_data.sort(key=lambda x: float(x[2][:-1]), reverse=self.sort_reverse)
 
@@ -341,7 +340,7 @@ class CSVViewer(App):
         log_file = log_dir / "app.log"
 
         timestamp = datetime.now(tz=ZoneInfo("America/New_York")).strftime("%Y-%m-%d %H:%M:%S")
-        with open(log_file, "a") as f:
+        with Path(log_file).open("a", encoding="utf-8") as f:
             f.write(f"{timestamp}: {message}\n")
 
 

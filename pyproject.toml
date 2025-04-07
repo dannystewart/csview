@@ -1,26 +1,27 @@
-[tool.poetry]
+[project]
 name = "csv-viewer"
-version = "0.2.2"
-description = "CSV Viewer is a text-based CSV viewer for the terminal."
-authors = ["Danny Stewart <danny@stewart.cc>"]
-packages = [{include = "csv_viewer", from = "src"}]
-
-[tool.poetry.dependencies]
-python = "^3.12"
-dsutil = {git = "https://gitlab.dannystewart.com/danny/dsutil.git"}
-click = ">=8.1.7"
-matplotlib = ">=3.9.3"
-openpyxl = ">=3.1.5"
-pandas = ">=2.2.3"
-rich = ">=13.9.4"
-seaborn = ">=0.13.2"
-tabulate = ">=0.9.0"
-termcolor = ">=2.5.0"
-textual = ">=0.89.1"
-
-[tool.poetry.scripts]
-csv-viewer = "csv_viewer.csv_viewer:main"
+version = "0.3.0"
+description = "Text-based CSV viewer for the terminal"
+authors = [{ name = "Danny Stewart", email = "danny@stewart.cc" }]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.12,<4.0"
+dependencies = [
+    "click (>=8.1.8,<9.0.0)",
+    "matplotlib (>=3.10.1,<4.0.0)",
+    "openpyxl (>=3.1.5,<4.0.0)",
+    "pandas (>=2.2.3,<3.0.0)",
+    "polykit (>=0.7.4,<0.8.0)",
+    "rich (<=13.9.4)",
+    "seaborn (>=0.13.2,<0.14.0)",
+    "tabulate (>=0.9.0,<0.10.0)",
+    "textual (>=3.0.1,<4.0.0)",
+]
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.11.4"
+mypy = "^1.15.0"
