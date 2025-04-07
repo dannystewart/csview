@@ -1,6 +1,6 @@
 [project]
-name = "csv-viewer"
-version = "0.3.0"
+name = "csview"
+version = "0.1.0"
 description = "Text-based CSV viewer for the terminal"
 authors = [{ name = "Danny Stewart", email = "danny@stewart.cc" }]
 license = { text = "MIT" }
