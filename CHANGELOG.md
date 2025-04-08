@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+## [0.1.3] (2025-04-08)
+
+## Changed
+
+- Renames `CSVViewer` class to `CSView` to better align with the project name.
+- Updates type ignore comments to use more specific `[attr-defined]` syntax instead of blanket ignores.
+
 ## [0.1.2] (2025-04-07)
 
 ### Fixes
@@ -44,7 +51,8 @@ Initial release. Changes name from `csv-viewer` to `csview`.
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 <!-- Versions -->
-[unreleased]: https://github.com/dannystewart/csview/compare/v0.1.2...HEAD
+[unreleased]: https://github.com/dannystewart/csview/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/dannystewart/csview/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/dannystewart/csview/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/dannystewart/csv-viewer/releases/tag/v0.1.1
 [0.1.0]: https://github.com/dannystewart/csview/releases/tag/v0.1.0
