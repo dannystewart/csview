@@ -20,7 +20,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Improves README formatting.
 - Updates dependencies.
 
-## Other
+## Fixed
+
+- Fixes CSS file path resolution by correctly converting the file location to a `Path` object before finding its parent.
+
+## Internal
 
 - Adds MIT license file, officially making the project open source (so you can legally steal my code now! 🎉).
 - Expands `.gitignore` with comprehensive Python-specific patterns.
