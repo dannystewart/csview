@@ -961,26 +961,26 @@ type = ["mypy (>=1.14.1)"]
 
 [[package]]
 name = "polykit"
-version = "0.7.4"
-description = "Python toolkit"
+version = "0.8.0"
+description = "Delightful Python toolkit with power and personality "
 optional = false
 python-versions = ">=3.12"
 groups = ["main"]
 files = [
-    {file = "polykit-0.7.4-py3-none-any.whl", hash = "sha256:80d2dad312388d67e458f0148e8b80ef64cbe85163bd4227ade7dfac80a9aad0"},
-    {file = "polykit-0.7.4.tar.gz", hash = "sha256:89c85ce3276e4f9f0352d5d2efbac2742f64fd284ff89443313c520c3fa5beba"},
+    {file = "polykit-0.8.0-py3-none-any.whl", hash = "sha256:d3d7b427dee04e0fe3006f5d22d639ed680d078217711ccdb669b70f651472fe"},
+    {file = "polykit-0.8.0.tar.gz", hash = "sha256:291e2b2443605c9948f92fa940f87f1c58399decfb95f26f48ec9202a65a409b"},
 ]
 
 [package.dependencies]
-halo = ">=0.0.31"
+halo = ">=0.0.31,<0.0.32"
 natsort = ">=8.4.0,<9.0.0"
-packaging = ">=24.2"
-platformdirs = ">=4.3.7"
-python-dateutil = ">=2.9.0.post0"
-python-dotenv = ">=1.1.0"
-requests = ">=2.32.3"
+packaging = ">=24.2,<25.0"
+platformdirs = ">=4.3.7,<5.0.0"
+python-dateutil = ">=2.9.0.post0,<3.0.0"
+python-dotenv = ">=1.1.0,<2.0.0"
+requests = ">=2.32.3,<3.0.0"
 send2trash = ">=1.8.3,<2.0.0"
-tzlocal = ">=5.3.1"
+tzlocal = ">=5.3.1,<6.0.0"
 
 [[package]]
 name = "pygments"
@@ -1315,4 +1315,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "736e081f3c272c55298504b1c550e69e913f06f730cccf3252b7ddff0ea1407d"
+content-hash = "38c9ae8223a327e63eb893093e342f555b59632f181822b09f539f5df48a27dd"

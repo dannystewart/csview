@@ -6,25 +6,31 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## [Unreleased]
 
+## [0.1.2] (2025-04-07)
+
+### Fixes
+
+- Updates `polykit` dependency to 0.8.0 to fix `polykit_setup` import.
+
 ## [0.1.1] (2025-04-07)
 
-## Added
+### Added
 
 - Adds script entry point in `pyproject.toml`, making the package executable via the `csview` command after installation.
 - Adds comprehensive project documentation including README with features, installation instructions, and usage examples.
 - Adds GitHub Actions workflows for automatic documentation publishing and PyPI releases.
 
-## Changed
+### Changed
 
 - Renames source files from `csv_viewer.py` to `csview.py` to maintain naming convention.
 - Improves README formatting.
 - Updates dependencies.
 
-## Fixed
+### Fixed
 
 - Fixes CSS file path resolution by correctly converting the file location to a `Path` object before finding its parent.
 
-## Internal
+### Internal
 
 - Adds MIT license file, officially making the project open source (so you can legally steal my code now! 🎉).
 - Expands `.gitignore` with comprehensive Python-specific patterns.
@@ -38,6 +44,7 @@ Initial release. Changes name from `csv-viewer` to `csview`.
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 <!-- Versions -->
-[unreleased]: https://github.com/dannystewart/csv-viewer/compare/v0.1.1...HEAD
+[unreleased]: https://github.com/dannystewart/csview/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/dannystewart/csview/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/dannystewart/csv-viewer/releases/tag/v0.1.1
-[0.1.0]: https://github.com/dannystewart/csv-viewer/releases/tag/v0.1.0
+[0.1.0]: https://github.com/dannystewart/csview/releases/tag/v0.1.0
