@@ -26,7 +26,7 @@ polykit_setup()
 class CSVViewer(App):
     """View a CSV file using a textual interface."""
 
-    CSS_PATH = Path(Path.parent(__file__)) / "csv_viewer.css"
+    CSS_PATH = Path(__file__).parent / "csview.css"
 
     # Style settings
     MIN_VALUE_WIDTH = 25  # Minimum width for the "Value" column
