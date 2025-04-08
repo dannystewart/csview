@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# type: ignore
+# type: ignore[attr-defined]
 
 """View a CSV file using a textual interface."""
 
