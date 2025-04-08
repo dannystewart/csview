@@ -11,7 +11,11 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 ## Changed
 
 - Renames `CSVViewer` class to `CSView` to better align with the project name.
-- Updates type ignore comments to use more specific `[attr-defined]` syntax instead of blanket ignores.
+- Improves type checking by updating type ignore comments to use more specific syntax with `[attr-defined]` instead of blanket ignores.
+
+### Fixed
+
+- Addresses widespread compatibility issues with boundaries for other packages by adding an explicit upper version bound (<14.0.0) for `rich`. (Their fault, not mine!)
 
 ## [0.1.2] (2025-04-07)
 
