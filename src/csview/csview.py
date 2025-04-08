@@ -23,7 +23,7 @@ from textual.widgets import Button, DataTable, Footer, Header, Input, RichLog, S
 polykit_setup()
 
 
-class CSVViewer(App):
+class CSView(App):
     """View a CSV file using a textual interface."""
 
     CSS_PATH = Path(__file__).parent / "csview.css"
@@ -349,7 +349,7 @@ class CSVViewer(App):
 @click.option("--show-log", is_flag=True, help="Show the log viewer in the application")
 def main(filename: str, show_log: bool) -> None:
     """Run the application."""
-    app = CSVViewer(filename, show_log)
+    app = CSView(filename, show_log)
     app.run()
 
 
